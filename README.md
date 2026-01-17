@@ -66,10 +66,4 @@ __version__ = "X.X.X"
 
 ### Publication sur PyPI
 
-```bash
-# Test sur TestPyPI d'abord
-twine upload --repository testpypi dist/*
-
-# Publication officielle
-twine upload dist/*
-```
+La publication s'effectue lors de la création d'une nouvelle release sur le dépôt Github.
