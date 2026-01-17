@@ -28,9 +28,9 @@ classifiers = [
 dependencies = ["raylib>=5.0.0"]
 
 [project.urls]
-Homepage = "https://github.com/l-ADN-des-petits-genie/adndpg-python"
-Documentation = "https://github.com/l-ADN-des-petits-genie/adndpg-python#readme"
-Issues = "https://github.com/l-ADN-des-petits-genie/adndpg-python/issues"
+Homepage = "https://github.com/l-ADN-des-petits-genies/adndpg-python"
+Documentation = "https://github.com/l-ADN-des-petits-genies/adndpg-python#readme"
+Issues = "https://github.com/l-ADN-des-petits-genies/adndpg-python/issues"
 
 [tool.hatch.version]
 path = "src/adndpg/__init__.py"
