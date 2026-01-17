@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "adndpg"
 dynamic = ["version"]
-description = "Over-simplified graphics API for educational purpose based on raylib"
+description = "Bibliothèque graphique extrêmement simplifliée en français à des fins éducative, basée sur pyray"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.8"
