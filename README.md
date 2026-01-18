@@ -288,4 +288,4 @@ Mettre à jour la version dans `src/adndpg/__init__.py`
 __version__ = "X.X.X"
 ```
 
-Sur Github, penser à faire une release manuellement pour lancer la CI qui publiera la veersion sur [PyPi](https://pypi.org/project/adndpg/).
+Sur Github, penser à faire une release manuellement pour lancer la CI qui publiera la version sur [PyPi](https://pypi.org/project/adndpg/).
