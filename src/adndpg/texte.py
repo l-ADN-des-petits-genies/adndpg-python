@@ -15,12 +15,26 @@ class Texte:
     def dessiner(self) -> None:
         if not self.visible:
             return
-        raylib.draw_text(
-            self.contenu,
-            int(self.x), int(self.y),
-            self.taille,
-            self.couleur
-        )
+        
+        from adndpg.fenetre import _obtenir_police_defaut
+        police = _obtenir_police_defaut()
+        
+        if police:
+            raylib.draw_text_ex(
+                police,
+                self.contenu,
+                raylib.Vector2(self.x, self.y),
+                float(self.taille),
+                1.0, # Espacement
+                self.couleur
+            )
+        else:
+            raylib.draw_text(
+                self.contenu,
+                int(self.x), int(self.y),
+                self.taille,
+                self.couleur
+            )
     
     def deplacer(self, dx: float, dy: float) -> None:
         self.x += dx
@@ -32,4 +46,10 @@ class Texte:
     
     @property
     def largeur(self) -> int:
+        from adndpg.fenetre import _obtenir_police_defaut
+        police = _obtenir_police_defaut()
+        if police:
+            import pyray as raylib
+            vect = raylib.measure_text_ex(police, self.contenu, float(self.taille), 1.0)
+            return int(vect.x)
         return raylib.measure_text(self.contenu, self.taille)

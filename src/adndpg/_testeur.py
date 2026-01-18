@@ -6,6 +6,7 @@ import pyray as raylib
 import os
 
 from adndpg.couleurs import BLANC, NOIR, ROUGE, VERT, JAUNE, GRIS, ORANGE
+from adndpg.fenetre import _obtenir_police_defaut, _charger_ressources_module
 
 
 @dataclass
@@ -68,8 +69,13 @@ class TesteurVisuel:
 
 def _afficher_entete(classe: str, test_nom: str, index: int, total: int) -> None:
     raylib.draw_rectangle(0, 0, 800, 50, GRIS)
-    raylib.draw_text(f"[{index + 1}/{total}] {classe}", 10, 5, 18, ORANGE)
-    raylib.draw_text(f"Test: {test_nom}", 10, 27, 18, BLANC)
+    police = _obtenir_police_defaut()
+    if police:
+        raylib.draw_text_ex(police, f"[{index + 1}/{total}] {classe}", raylib.Vector2(10, 5), 18, 1, ORANGE)
+        raylib.draw_text_ex(police, f"Test: {test_nom}", raylib.Vector2(10, 27), 18, 1, BLANC)
+    else:
+        raylib.draw_text(f"[{index + 1}/{total}] {classe}", 10, 5, 18, ORANGE)
+        raylib.draw_text(f"Test: {test_nom}", 10, 27, 18, BLANC)
 
 
 def _afficher_barre_progression(index: int, total: int) -> None:
@@ -80,24 +86,39 @@ def _afficher_barre_progression(index: int, total: int) -> None:
 
 def _afficher_erreur(classe: str, test_nom: str, message: str) -> None:
     raylib.draw_rectangle(0, 0, 800, 600, raylib.Color(0, 0, 0, 200))
-    raylib.draw_text("ECHEC DU TEST", 280, 80, 36, ROUGE)
-    raylib.draw_text(f"Classe: {classe}", 50, 150, 22, ORANGE)
-    raylib.draw_text(f"Test: {test_nom}", 50, 180, 22, JAUNE)
+    police = _obtenir_police_defaut()
     
-    lignes = message.split('\n')
-    y = 230
-    for ligne in lignes[:12]:
-        raylib.draw_text(ligne[:90], 50, y, 16, BLANC)
-        y += 22
-    
-    raylib.draw_text("ESPACE = continuer  |  ECHAP = quitter", 180, 540, 20, GRIS)
+    if police:
+        raylib.draw_text_ex(police, "ECHEC DU TEST", raylib.Vector2(280, 80), 36, 1, ROUGE)
+        raylib.draw_text_ex(police, f"Classe: {classe}", raylib.Vector2(50, 150), 22, 1, ORANGE)
+        raylib.draw_text_ex(police, f"Test: {test_nom}", raylib.Vector2(50, 180), 22, 1, JAUNE)
+        
+        lignes = message.split('\n')
+        y = 230
+        for ligne in lignes[:12]:
+            raylib.draw_text_ex(police, ligne[:90], raylib.Vector2(50, y), 16, 1, BLANC)
+            y += 22
+        
+        raylib.draw_text_ex(police, "ESPACE = continuer  |  ECHAP = quitter", raylib.Vector2(180, 540), 20, 1, GRIS)
+    else:
+        raylib.draw_text("ECHEC DU TEST", 280, 80, 36, ROUGE)
+        raylib.draw_text(f"Classe: {classe}", 50, 150, 22, ORANGE)
+        raylib.draw_text(f"Test: {test_nom}", 50, 180, 22, JAUNE)
+        
+        lignes = message.split('\n')
+        y = 230
+        for ligne in lignes[:12]:
+            raylib.draw_text(ligne[:90], 50, y, 16, BLANC)
+            y += 22
+        
+        raylib.draw_text("ESPACE = continuer  |  ECHAP = quitter", 180, 540, 20, GRIS)
 
 
 def _afficher_resume(resultats: List[_ResultatTest], passes: int, echecs: int, logo_texture=None) -> None:
     raylib.draw_rectangle(0, 0, 800, 600, NOIR)
+    police = _obtenir_police_defaut()
     
     y = 50
-    
     if logo_texture and logo_texture.id > 0:
         scale = 1.0
         target_height = 80
@@ -109,31 +130,44 @@ def _afficher_resume(resultats: List[_ResultatTest], passes: int, echecs: int, l
     
     titre = "TOUS LES TESTS PASSES!" if echecs == 0 else "TESTS TERMINES"
     couleur = VERT if echecs == 0 else JAUNE
-    raylib.draw_text(titre, 50, y, 36, couleur)
-    y += 50
     
-    raylib.draw_text(f"Tests reussis: {passes}", 50, y, 28, VERT)
-    y += 35
-    raylib.draw_text(f"Tests echoues: {echecs}", 50, y, 28, 
-                (ROUGE if echecs > 0 else GRIS))
-    
-    y += 50
-    raylib.draw_text("Details:", 50, y, 20, BLANC)
-    y += 35
-    
-    base_y_details = y
-    for resultat in resultats:
-        if y > 530:
-            raylib.draw_text("...", 50, y, 18, GRIS)
-            break
-        
-        if resultat.reussi:
-            raylib.draw_text(f"  OK  {resultat.classe}.{resultat.nom}", 50, y, 16, VERT)
-        else:
-            raylib.draw_text(f"  X   {resultat.classe}.{resultat.nom}", 50, y, 16, ROUGE)
-        y += 22
-    
-    raylib.draw_text("ECHAP = quitter", 600, 560, 18, GRIS)
+    if police:
+        raylib.draw_text_ex(police, titre, raylib.Vector2(50, y), 36, 1, couleur)
+        y += 50
+        raylib.draw_text_ex(police, f"Tests reussis: {passes}", raylib.Vector2(50, y), 28, 1, VERT)
+        y += 35
+        raylib.draw_text_ex(police, f"Tests echoues: {echecs}", raylib.Vector2(50, y), 28, 1, (ROUGE if echecs > 0 else GRIS))
+        y += 50
+        raylib.draw_text_ex(police, "Details:", raylib.Vector2(50, y), 20, 1, BLANC)
+        y += 35
+        for resultat in resultats:
+            if y > 530:
+                raylib.draw_text_ex(police, "...", raylib.Vector2(50, y), 18, 1, GRIS)
+                break
+            col = VERT if resultat.reussi else ROUGE
+            sym = "  OK  " if resultat.reussi else "  X   "
+            raylib.draw_text_ex(police, f"{sym}{resultat.classe}.{resultat.nom}", raylib.Vector2(50, y), 16, 1, col)
+            y += 22
+        raylib.draw_text_ex(police, "ECHAP = quitter", raylib.Vector2(600, 560), 18, 1, GRIS)
+    else:
+        raylib.draw_text(titre, 50, y, 36, couleur)
+        y += 50
+        raylib.draw_text(f"Tests reussis: {passes}", 50, y, 28, VERT)
+        y += 35
+        raylib.draw_text(f"Tests echoues: {echecs}", 50, y, 28, (ROUGE if echecs > 0 else GRIS))
+        y += 50
+        raylib.draw_text("Details:", 50, y, 20, BLANC)
+        y += 35
+        for resultat in resultats:
+            if y > 530:
+                raylib.draw_text("...", 50, y, 18, GRIS)
+                break
+            if resultat.reussi:
+                raylib.draw_text(f"  OK  {resultat.classe}.{resultat.nom}", 50, y, 16, VERT)
+            else:
+                raylib.draw_text(f"  X   {resultat.classe}.{resultat.nom}", 50, y, 16, ROUGE)
+            y += 22
+        raylib.draw_text("ECHAP = quitter", 600, 560, 18, GRIS)
 
 
 def lancer_tests(*classes_test: type) -> bool:
@@ -151,6 +185,9 @@ def lancer_tests(*classes_test: type) -> bool:
     
     raylib.init_window(800, 600, "Tests Visuels adndpg")
     raylib.set_target_fps(60)
+    
+    # Charger la police Noto Sans pour les tests
+    _charger_ressources_module()
     
     logo_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'tests', 'assets', 'cropped-logo-adnpg.png'))
     logo_texture = None
