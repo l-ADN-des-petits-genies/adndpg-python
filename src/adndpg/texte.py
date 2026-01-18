@@ -16,18 +16,26 @@ class Texte:
         if not self.visible:
             return
         
-        from adndpg.fenetre import _obtenir_police_defaut
+        from adndpg.fenetre import _obtenir_police_defaut, _assurer_caracteres
+        _assurer_caracteres(self.contenu)
         police = _obtenir_police_defaut()
         
         if police:
-            raylib.draw_text_ex(
+            # Conversion en codepoints pour un support Unicode robuste
+            utf8_bytes = self.contenu.encode('utf-8')
+            count = raylib.ffi.new("int *")
+            codepoints = raylib.load_codepoints(utf8_bytes, count)
+            
+            raylib.draw_text_codepoints(
                 police,
-                self.contenu,
+                codepoints,
+                count[0],
                 raylib.Vector2(self.x, self.y),
                 float(self.taille),
                 1.0, # Espacement
                 self.couleur
             )
+            raylib.unload_codepoints(codepoints)
         else:
             raylib.draw_text(
                 self.contenu,
@@ -46,10 +54,20 @@ class Texte:
     
     @property
     def largeur(self) -> int:
-        from adndpg.fenetre import _obtenir_police_defaut
+        from adndpg.fenetre import _obtenir_police_defaut, _assurer_caracteres
+        _assurer_caracteres(self.contenu)
         police = _obtenir_police_defaut()
         if police:
-            import pyray as raylib
-            vect = raylib.measure_text_ex(police, self.contenu, float(self.taille), 1.0)
+            utf8_bytes = self.contenu.encode('utf-8')
+            count = raylib.ffi.new("int *")
+            codepoints = raylib.load_codepoints(utf8_bytes, count)
+            
+            vect = raylib.measure_text_ex(
+                police,
+                self.contenu,
+                float(self.taille),
+                1.0
+            )
+            raylib.unload_codepoints(codepoints)
             return int(vect.x)
         return raylib.measure_text(self.contenu, self.taille)

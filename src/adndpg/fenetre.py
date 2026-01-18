@@ -11,9 +11,11 @@ _hauteur_init = 600
 
 # Variables pour la police
 _police_defaut = None
-_hot_reload_active = False
+_caracteres_presents = set(range(32, 255)) # ASCII + Latin-1 par défaut
 _mtime_initiale = 0.0
 _fichier_cible = None
+_hot_reload_active = False
+_chemin_police_personnalisee = None
 
 
 def _obtenir_police_defaut():
@@ -53,6 +55,8 @@ def _afficher_ecran_erreur(titre_err: str, details: str) -> None:
         raylib.clear_background(raylib.Color(120, 20, 20, 255))
         
         # Titre
+        _assurer_caracteres(titre_err)
+        _assurer_caracteres("Corrige ton code et sauvegarde pour relancer automatiquement.")
         police = _obtenir_police_defaut()
         if police:
             raylib.draw_text_ex(police, titre_err, raylib.Vector2(30, 40), 30, 1, raylib.WHITE)
@@ -65,6 +69,8 @@ def _afficher_ecran_erreur(titre_err: str, details: str) -> None:
         y = 130
         for line in details.split('\n')[-20:]: # 20 dernières lignes
             if not line.strip(): continue
+            _assurer_caracteres(line[:100])
+            police = _obtenir_police_defaut() # Refresh police in case it changed
             if police:
                 raylib.draw_text_ex(police, line[:100], raylib.Vector2(30, y), 14, 1, raylib.Color(255, 255, 255, 200))
             else:
@@ -126,16 +132,71 @@ def _activer_hot_reload() -> None:
             pass
 
 
+_nouveaux_caracteres_a_charger = set()
+
+def _assurer_caracteres(texte: str) -> None:
+    """Marque les nouveaux caractères pour chargement au prochain cycle (Interne)."""
+    global _caracteres_presents, _nouveaux_caracteres_a_charger
+    if not texte:
+        return
+    
+    for char in texte:
+        cp = ord(char)
+        if cp > 0 and cp not in _caracteres_presents:
+            _nouveaux_caracteres_a_charger.add(cp)
+
+
+def _recharger_si_besoin() -> None:
+    """Recharge la police si de nouveaux caractères ont été détectés (Interne)."""
+    global _nouveaux_caracteres_a_charger, _caracteres_presents, _fenetre_ouverte
+    if _nouveaux_caracteres_a_charger:
+        _caracteres_presents.update(_nouveaux_caracteres_a_charger)
+        _nouveaux_caracteres_a_charger.clear()
+        if _fenetre_ouverte:
+            _charger_ressources_module()
+
+
 def _charger_ressources_module():
     """Charge les ressources internes du module (Police, etc.)."""
-    global _police_defaut
-    chemin_police = os.path.join(os.path.dirname(__file__), "fonts", "NotoSans-Medium.ttf")
-    if os.path.exists(chemin_police):
-        # On charge 250 glyphes pour couvrir le français (accents, etc.)
-        _police_defaut = raylib.load_font_ex(chemin_police, 128, None, 250)
+    global _police_defaut, _caracteres_presents, _chemin_police_personnalisee
+    
+    # On cherche d'abord la police pan-unicode téléchargée
+    chemins_possibles = []
+    if _chemin_police_personnalisee:
+        chemins_possibles.append(_chemin_police_personnalisee)
+    
+    # 1. Noto Sans SC (Fichier riche téléchargé)
+    chemins_possibles.append(os.path.join(os.path.dirname(__file__), "fonts", "NotoSansSC-Regular.otf"))
+    # 2. Noto Sans Medium (Fichier de base léger)
+    chemins_possibles.append(os.path.join(os.path.dirname(__file__), "fonts", "NotoSans-Medium.ttf"))
+    
+    chemin_final = None
+    for p in chemins_possibles:
+        if os.path.exists(p):
+            chemin_final = p
+            break
+
+    if chemin_final:
+        if _police_defaut:
+            raylib.unload_font(_police_defaut)
         
-        # Anti-aliasing pour la texture de la police : Bilinéaire (stable et propre)
-        raylib.set_texture_filter(_police_defaut.texture, raylib.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        cps = sorted(list(_caracteres_presents))
+        try:
+            # On s'assure que le point de code 0xFFFD (replacement character) est présent
+            # pour éviter les '?' si un glyphe manque vraiment.
+            if 0xFFFD not in _caracteres_presents:
+                cps.append(0xFFFD)
+                cps.sort()
+
+            cps_ptr = raylib.ffi.new(f"int[{len(cps)}]", cps)
+            cps_ptr_casted = raylib.ffi.cast("int *", cps_ptr)
+            
+            # Taille 48px pour un bon équilibre entre netteté et performance atlas
+            _police_defaut = raylib.load_font_ex(chemin_final, 48, cps_ptr_casted, len(cps))
+            raylib.set_texture_filter(_police_defaut.texture, raylib.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        except Exception as e:
+            print(f"Avertissement: Échec du chargement de {chemin_final}: {e}")
+            _police_defaut = raylib.get_font_default()
 
 
 def ouvrir_fenetre(titre: str = "Mon Application @DN") -> None:
@@ -220,6 +281,9 @@ def fenetre_est_ouverte() -> bool:
     
     if raylib.window_should_close():
         return False
+    
+    # On recharge la police AVANT begin_drawing si nécessaire
+    _recharger_si_besoin()
     
     raylib.begin_drawing()
     return True
